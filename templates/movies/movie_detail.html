@@ -1,0 +1,372 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ movie.title }} - BingedIn{% endblock %}
+
+{% block styles %}
+<style>
+    :root {
+        --primary: #4b514a;
+        --secondary: #d1ebce;
+    }
+    
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    
+    body {
+        background-color: #000;
+        color: var(--secondary);
+    }
+    
+    .header {
+        background-color: rgba(0, 0, 0, 0.8);
+        padding: 20px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: fixed;
+        width: 100%;
+        z-index: 100;
+    }
+    
+    .logo {
+        color: var(--secondary);
+        font-size: 28px;
+        font-weight: bold;
+        text-decoration: none;
+    }
+    
+    .navigation {
+        display: flex;
+        align-items: center;
+    }
+    
+    .profile-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: var(--secondary);
+        margin-left: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .navigation a {
+        color: #fff;
+        margin-left: 20px;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    
+    .movie-hero {
+        height: 70vh;
+        background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.8)), url('{{ movie.image_url }}');
+        background-size: cover;
+        background-position: center;
+        color: #fff;
+        display: flex;
+        flex-direction: column;
+        justify-content: flex-end;
+        padding: 50px;
+    }
+    
+    .movie-hero h1 {
+        font-size: 46px;
+        margin-bottom: 10px;
+    }
+    
+    .movie-meta {
+        font-size: 16px;
+        color: #ccc;
+        margin-bottom: 10px;
+    }
+    
+    .movie-desc {
+        font-size: 18px;
+        max-width: 800px;
+        margin-bottom: 30px;
+        line-height: 1.5;
+    }
+    
+    .action-btns {
+        display: flex;
+        align-items: center;
+        margin-bottom: 30px;
+    }
+    
+    .btn {
+        padding: 12px 30px;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        text-decoration: none;
+        margin-right: 15px;
+        font-size: 16px;
+        display: inline-flex;
+        align-items: center;
+    }
+    
+    .btn-primary {
+        background-color: var(--secondary);
+        color: var(--primary);
+        border: none;
+    }
+    
+    .btn-secondary {
+        background-color: rgba(255, 255, 255, 0.2);
+        color: #fff;
+        border: none;
+    }
+    
+    .btn-disabled {
+        background-color: #555;
+        color: #ddd;
+        cursor: default;
+    }
+    
+    .btn-icon {
+        margin-right: 8px;
+        font-size: 18px;
+    }
+    
+    .section-title {
+        font-size: 24px;
+        margin: 40px 0 20px;
+        padding: 0 50px;
+        color: #fff;
+    }
+    
+    .movie-details {
+        padding: 50px;
+        background-color: #111;
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 40px;
+    }
+    
+    .detail-group {
+        margin-bottom: 25px;
+    }
+    
+    .detail-group h3 {
+        font-size: 18px;
+        margin-bottom: 10px;
+        color: #ccc;
+    }
+    
+    .detail-group p {
+        font-size: 16px;
+        color: #fff;
+        line-height: 1.4;
+    }
+    
+    .similar-movies {
+        padding: 30px 50px 50px;
+    }
+    
+    .movie-row {
+        display: flex;
+        overflow-x: auto;
+        padding-bottom: 15px;
+        gap: 20px;
+        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+    }
+    
+    .movie-row::-webkit-scrollbar {
+        display: none; /* Chrome, Safari, Opera */
+    }
+    
+    .movie-card {
+        flex: 0 0 auto;
+        width: 250px;
+        height: 150px;
+        background-size: cover;
+        background-position: center;
+        border-radius: 8px;
+        position: relative;
+        transition: transform 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .movie-card:hover {
+        transform: scale(1.05);
+    }
+    
+    .movie-info {
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        background: rgba(209, 235, 206, 0.8);
+        color: var(--primary);
+        padding: 12px;
+        opacity: 0;
+        transition: opacity 0.3s ease;
+        border-bottom-left-radius: 8px;
+        border-bottom-right-radius: 8px;
+    }
+    
+    .movie-card:hover .movie-info {
+        opacity: 1;
+    }
+    
+    .movie-title {
+        font-weight: bold;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+    
+    .messages {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 1000;
+        width: 300px;
+    }
+    
+    .message {
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        animation: fadeIn 0.3s ease-in, fadeOut 0.5s ease-in 3s forwards;
+    }
+    
+    .message-success {
+        background-color: #4CAF50;
+        color: white;
+    }
+    
+    .message-info {
+        background-color: #2196F3;
+        color: white;
+    }
+    
+    .message-warning {
+        background-color: #ff9800;
+        color: white;
+    }
+    
+    .message-error {
+        background-color: #f44336;
+        color: white;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-20px); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <a href="{% url 'home' %}" class="logo">BingedIn</a>
+    <div class="navigation">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'search' %}">Search</a>
+        <a href="{% url 'profile' %}">Profile</a>
+        <a href="{% url 'logout' %}">Logout</a>
+        <a href="{% url 'profile' %}">
+            <div class="profile-icon">{{ request.user.username.0|upper }}</div>
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+        <div class="message message-{{ message.tags }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="movie-hero">
+    <h1>{{ movie.title }} ({{ movie.release_year }})</h1>
+    <div class="movie-meta">
+        Director: {{ movie.director }} | Cast: {{ movie.actors }}
+    </div>
+    <p class="movie-desc">{{ movie.description }}</p>
+    <div class="action-btns">
+        {% if is_watched %}
+            <a href="#" class="btn btn-disabled"><span class="btn-icon">✓</span> Already Watched</a>
+        {% else %}
+            <a href="{% url 'add_to_watched' movie.id %}" class="btn btn-primary"><span class="btn-icon">✓</span> Add to Watched</a>
+        {% endif %}
+        
+        {% if is_recommended %}
+            <a href="#" class="btn btn-disabled"><span class="btn-icon">🎬</span> Already Recommended</a>
+        {% else %}
+            <a href="{% url 'add_to_recommended' movie.id %}" class="btn btn-secondary"><span class="btn-icon">🎬</span> Recommend</a>
+        {% endif %}
+    </div>
+</div>
+
+<div class="movie-details">
+    <div class="left-col">
+        <div class="detail-group">
+            <h3>Director</h3>
+            <p>{{ movie.director }}</p>
+        </div>
+        <div class="detail-group">
+            <h3>Cast</h3>
+            <p>{{ movie.actors }}</p>
+        </div>
+    </div>
+    <div class="right-col">
+        <div class="detail-group">
+            <h3>About</h3>
+            <p>{{ movie.description }}</p>
+        </div>
+        <div class="detail-group">
+            <h3>Release Year</h3>
+            <p>{{ movie.release_year }}</p>
+        </div>
+    </div>
+</div>
+
+<h2 class="section-title">Similar Movies You Might Like</h2>
+<div class="similar-movies">
+    <div class="movie-row">
+        {% for movie in similar_movies %}
+        <a href="{% url 'movie_detail' movie.id %}">
+            <div class="movie-card" style="background-image: url('{{ movie.image_url }}')">
+                <div class="movie-info">
+                    <div class="movie-title">{{ movie.title }} ({{ movie.release_year }})</div>
+                    <div class="movie-desc">{{ movie.description|truncatechars:60 }}</div>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Auto-hide messages after 4 seconds
+    document.addEventListener('DOMContentLoaded', function() {
+        setTimeout(function() {
+            var messages = document.querySelectorAll('.message');
+            messages.forEach(function(message) {
+                message.style.display = 'none';
+            });
+        }, 4000);
+    });
+</script>
+{% endblock %} 

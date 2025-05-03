@@ -1,0 +1,23 @@
+<svg width="300" height="450" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <rect width="300" height="450" fill="#141414" />
+  
+  <!-- Border -->
+  <rect x="5" y="5" width="290" height="440" fill="none" stroke="#E50914" stroke-width="2" />
+  
+  <!-- Film Icon -->
+  <g transform="translate(150, 170)" fill="#E50914">
+    <rect x="-40" y="-30" width="80" height="60" rx="5" />
+    <rect x="-50" y="-40" width="10" height="80" rx="2" />
+    <rect x="40" y="-40" width="10" height="80" rx="2" />
+    <circle cx="0" cy="0" r="20" fill="#141414" />
+    <circle cx="0" cy="0" r="10" fill="#E50914" />
+  </g>
+  
+  <!-- Text -->
+  <text x="150" y="250" font-family="Arial, sans-serif" font-size="24" font-weight="bold" fill="white" text-anchor="middle">No Poster</text>
+  <text x="150" y="280" font-family="Arial, sans-serif" font-size="18" fill="#999" text-anchor="middle">Available</text>
+  
+  <!-- BingedIn Logo Text -->
+  <text x="150" y="350" font-family="Arial, sans-serif" font-size="16" font-weight="bold" fill="#E50914" text-anchor="middle">BingedIn</text>
+</svg> 

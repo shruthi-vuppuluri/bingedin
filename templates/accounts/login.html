@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block title %}BingedIn - Sign In{% endblock %}
+
+{% block styles %}
+<style>
+    body {
+        margin: 0;
+        padding: 0;
+        font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+        background-color: #d1ebce;
+        color: #fff;
+    }
+
+    .background {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: linear-gradient(rgba(209, 235, 206, 0.8), rgba(196, 230, 193, 0.9)), 
+                    url('/static/images/background.jpg') center/cover no-repeat;
+        filter: brightness(1);
+        z-index: -1;
+    }
+
+    .container {
+        max-width: 450px;
+        margin: 0 auto;
+        padding: 60px 40px 40px;
+    }
+
+    .logo {
+        font-size: 32px;
+        font-weight: bold;
+        color: #4b514a;
+        margin-bottom: 30px;
+        text-shadow: 0 1px 2px rgba(255, 255, 255, 0.3);
+        letter-spacing: 1px;
+        /* Added warped logo effect */
+        display: inline-block;
+        transform: perspective(500px) rotateX(10deg) rotateY(-5deg);
+        transform-origin: center;
+        animation: warpEffect 6s infinite alternate;
+    }
+
+    /* Animation for the warped logo effect */
+    @keyframes warpEffect {
+        0% {
+            transform: perspective(500px) rotateX(5deg) rotateY(-3deg) skewX(2deg);
+            text-shadow: 2px 2px 0 rgba(75, 81, 74, 0.3), -1px -1px 0 rgba(226, 247, 223, 0.5);
+        }
+        50% {
+            transform: perspective(500px) rotateX(-3deg) rotateY(5deg) skewX(-1deg);
+            text-shadow: -2px 1px 0 rgba(75, 81, 74, 0.3), 1px -2px 0 rgba(226, 247, 223, 0.5);
+        }
+        100% {
+            transform: perspective(500px) rotateX(5deg) rotateY(-3deg) skewX(2deg);
+            text-shadow: 2px 2px 0 rgba(75, 81, 74, 0.3), -1px -1px 0 rgba(226, 247, 223, 0.5);
+        }
+    }
+
+    .signin-form {
+        background-color: rgba(43, 48, 43, 0.9);
+        border-radius: 12px;
+        padding: 50px 45px 40px;
+        box-sizing: border-box;
+        box-shadow: 0 8px 25px rgba(75, 81, 74, 0.25);
+        border: 1px solid rgba(43, 48, 43, 0.2);
+        backdrop-filter: blur(5px);
+    }
+
+    h1 {
+        color: #d1ebce;
+        font-size: 28px;
+        font-weight: 400;
+        margin-bottom: 28px;
+        letter-spacing: 0.5px;
+    }
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-input {
+        width: 100%;
+        height: 50px;
+        background-color: rgba(30, 33, 30, 0.7);
+        border: 1px solid rgba(226, 247, 223, 0.2);
+        border-radius: 8px;
+        color: #fff;
+        padding: 16px 20px;
+        box-sizing: border-box;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+
+    .form-input:focus {
+        background-color: rgba(35, 38, 35, 0.8);
+        outline: none;
+        border-color: rgba(226, 247, 223, 0.4);
+        box-shadow: 0 0 12px rgba(226, 247, 223, 0.2);
+    }
+
+    .btn-signin {
+        width: 100%;
+        height: 50px;
+        background: linear-gradient(to bottom, #4b514a, #3a3f39);
+        color: #e2f7df;
+        border: none;
+        border-radius: 8px;
+        font-size: 16px;
+        font-weight: 500;
+        margin: 24px 0 12px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+
+    .btn-signin:hover {
+        background: linear-gradient(to bottom, #3a3f39, #2e322d);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    }
+
+    .remember-me {
+        display: flex;
+        align-items: center;
+        color: #bcd9b9;
+        font-size: 14px;
+        opacity: 0.8;
+    }
+
+    .remember-me input {
+        margin-right: 8px;
+        accent-color: #cde7ca;
+    }
+
+    .new-to {
+        color: rgba(205, 231, 202, 0.8);
+        font-size: 15px;
+        margin-top: 24px;
+        text-align: center;
+    }
+
+    .signup-link {
+        color: #e2f7df;
+        text-decoration: none;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        border-bottom: 1px dotted rgba(226, 247, 223, 0.5);
+        padding-bottom: 1px;
+    }
+
+    .signup-link:hover {
+        color: #ffffff;
+        border-bottom: 1px solid #e2f7df;
+        text-shadow: 0 0 8px rgba(226, 247, 223, 0.4);
+    }
+
+    .recaptcha-info {
+        color: rgba(205, 231, 202, 0.6);
+        font-size: 12px;
+        margin-top: 20px;
+        text-align: center;
+        line-height: 1.5;
+    }
+    
+    .messages {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 20px;
+    }
+    
+    .messages li {
+        padding: 10px;
+        margin-bottom: 10px;
+        border-radius: 4px;
+        color: white;
+    }
+    
+    .messages .error {
+        background-color: rgba(220, 53, 69, 0.8);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="background"></div>
+<div class="container">
+    <div class="logo">BINGEDIN</div>
+    <div class="signin-form">
+        <h1>Sign in</h1>
+        
+        {% if messages %}
+        <ul class="messages">
+            {% for message in messages %}
+            <li class="{{ message.tags }}">{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+        
+        <form method="post" action="{% url 'login' %}">
+            {% csrf_token %}
+            <div class="form-group">
+                <input type="email" name="email" class="form-input" placeholder="Email address" required>
+            </div>
+            <div class="form-group">
+                <input type="password" name="password" class="form-input" placeholder="Password" required>
+            </div>
+            <button type="submit" class="btn-signin">Sign in</button>
+            <div class="remember-me">
+                <input type="checkbox" id="remember-me" name="remember_me" checked>
+                <label for="remember-me">Remember me</label>
+            </div>
+            <div class="new-to">
+                New to BingedIn? <a href="{% url 'signup' %}" class="signup-link">Sign up now</a>
+            </div>
+            <div class="recaptcha-info">
+                This page is protected by reCAPTCHA to ensure you're not a bot.
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %} 
