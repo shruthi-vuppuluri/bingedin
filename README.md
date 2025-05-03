@@ -16,6 +16,24 @@ A Django application for tracking movies and TV shows.
 4. Load initial movie data: `python manage.py load_movies`
 5. Run the server: `python manage.py runserver`
 
+## Deployment on Render
+
+This application is configured for easy deployment on Render:
+
+1. Push this repository to GitHub
+2. In Render dashboard, click "New Blueprint" 
+3. Connect your GitHub repository
+4. Render will automatically detect the `render.yaml` file and create the necessary services
+5. Confirm the deployment settings and click "Apply"
+
+The deployment will:
+- Create a PostgreSQL database for your application
+- Build and deploy your application
+- Set up HTTPS automatically
+- Run the initial migrations and static files collection
+
+To update your deployment, simply push to your GitHub repository.
+
 ## Technologies Used
 
 - Django

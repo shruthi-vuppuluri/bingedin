@@ -12,21 +12,31 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 
 import os
 from pathlib import Path
+import sys
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Load environment variables from .env file if present
+try:
+    from dotenv import load_dotenv
+    load_dotenv(os.path.join(BASE_DIR, '.env'))
+    print("Loaded environment variables from .env file")
+except ImportError:
+    print("python-dotenv not installed, not loading .env file")
+except Exception as e:
+    print(f"Error loading .env file: {str(e)}")
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-key-for-development-only'
+SECRET_KEY = os.environ.get('SECRET_KEY', 'django-insecure-key-for-development-only')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.environ.get('DEBUG', 'True') == 'True'
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '.onrender.com']
 
 
 # Application definition
@@ -52,6 +62,18 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
+# Only add WhiteNoise if it's installed - prevents crashing in development
+try:
+    import whitenoise
+    MIDDLEWARE.insert(1, 'whitenoise.middleware.WhiteNoiseMiddleware')
+    # Enable WhiteNoise compression and caching for static files in production
+    if not DEBUG:
+        STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
+    else:
+        STATICFILES_STORAGE = 'whitenoise.storage.CompressedStaticFilesStorage'
+except ImportError:
+    pass
+
 ROOT_URLCONF = 'bingedin.urls'
 
 TEMPLATES = [
@@ -76,6 +98,7 @@ WSGI_APPLICATION = 'bingedin.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
+# Default to SQLite for development
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.sqlite3',
@@ -83,6 +106,17 @@ DATABASES = {
     }
 }
 
+# Use DATABASE_URL environment variable if provided (Production)
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    try:
+        import dj_database_url
+        DATABASES['default'] = dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+    except ImportError:
+        print("dj_database_url not installed, using SQLite")
+    except Exception as e:
+        print(f"Error configuring database: {str(e)}")
+        print("Falling back to SQLite")
 
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
@@ -119,7 +153,14 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.2/howto/static-files/
 
 STATIC_URL = '/static/'
-STATICFILES_DIRS = [os.path.join(BASE_DIR, 'static')]
+STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# Create static directory if it doesn't exist
+STATIC_DIR = os.path.join(BASE_DIR, 'static')
+if not os.path.exists(STATIC_DIR):
+    os.makedirs(STATIC_DIR)
+
+STATICFILES_DIRS = [STATIC_DIR]
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.2/ref/settings/#default-auto-field
@@ -130,3 +171,12 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 LOGIN_URL = 'login'
 LOGIN_REDIRECT_URL = 'home'
 LOGOUT_REDIRECT_URL = 'login'
+
+# HTTPS settings - only in production
+if not DEBUG:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    SECURE_SSL_REDIRECT = True
+    SECURE_HSTS_SECONDS = 31536000  # 1 year
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True

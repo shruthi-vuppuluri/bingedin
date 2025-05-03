@@ -50,4 +50,11 @@ ENV/
 .idea/
 *.iws
 *.iml
-*.ipr 
+*.ipr
+
+# Environment variables #
+.env
+.env.local
+.env.development
+.env.test
+.env.production 

@@ -1,0 +1,30 @@
+services:
+  - type: web
+    name: bingedin
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: "./build.sh"
+    startCommand: "gunicorn bingedin.wsgi:application"
+    runtime: python3
+    autoDeploy: true
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: bingedin-db
+          property: connectionString
+      - key: SECRET_KEY
+        generateValue: true
+      - key: WEB_CONCURRENCY
+        value: 4
+      - key: PYTHON_VERSION
+        value: 3.9.16
+      - key: DEBUG
+        value: false
+      - key: OMDB_API_KEY
+        value: 651b75a9  # Same as in load_movies.py
+
+databases:
+  - name: bingedin-db
+    plan: free
+    region: oregon 
