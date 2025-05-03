@@ -3,6 +3,13 @@
 set -o errexit
 
 echo "Starting build process..."
+echo "Python version: $(python --version)"
+echo "Working directory: $(pwd)"
+echo "Directory contents: $(ls -la)"
+
+# Make start script executable
+chmod +x start.sh
+echo "Made start.sh executable"
 
 # Create a virtual environment if not running in one already
 if [[ -z "${VIRTUAL_ENV}" ]]; then

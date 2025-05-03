@@ -5,9 +5,10 @@ services:
     region: oregon
     plan: free
     buildCommand: "./build.sh"
-    startCommand: "gunicorn bingedin.wsgi:application"
+    startCommand: "./start.sh"
     runtime: python3
     autoDeploy: true
+    rootDir: .
     envVars:
       - key: DATABASE_URL
         fromDatabase:

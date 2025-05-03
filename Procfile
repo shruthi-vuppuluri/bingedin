@@ -1,1 +1,1 @@
-web: gunicorn bingedin.wsgi:application 
+web: gunicorn bingedin.wsgi:application --log-file - 
