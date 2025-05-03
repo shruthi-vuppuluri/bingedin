@@ -1,8 +1,10 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q
+from django.db.models import Q, Avg
 from django.contrib import messages
-from .models import Movie, Genre
+from django.http import HttpResponseForbidden
+from .models import Movie, Genre, Review
+from .forms import ReviewForm
 
 # Create your views here.
 
@@ -87,11 +89,50 @@ def movie_detail(request, movie_id):
     # Check if movie is in user's recommended list
     is_recommended = request.user.profile.recommended_movies.filter(id=movie_id).exists()
     
+    # Get all reviews for this movie
+    reviews = movie.reviews.all()
+    
+    # Calculate average rating
+    avg_rating = reviews.aggregate(Avg('rating'))['rating__avg']
+    
+    # Check if current user has already reviewed this movie
+    user_review = None
+    review_form = None
+    
+    if request.user.is_authenticated:
+        user_review = reviews.filter(user=request.user).first()
+        
+        # If POST request, process the review form
+        if request.method == 'POST':
+            # If user already has a review, update it
+            if user_review:
+                review_form = ReviewForm(request.POST, instance=user_review)
+            else:
+                review_form = ReviewForm(request.POST)
+                
+            if review_form.is_valid():
+                review = review_form.save(commit=False)
+                review.movie = movie
+                review.user = request.user
+                review.save()
+                messages.success(request, "Your review has been submitted!")
+                return redirect('movie_detail', movie_id=movie_id)
+        else:
+            # If user already has a review, pre-populate the form
+            if user_review:
+                review_form = ReviewForm(instance=user_review)
+            else:
+                review_form = ReviewForm()
+    
     context = {
         'movie': movie,
         'similar_movies': similar_movies,
         'is_watched': is_watched,
         'is_recommended': is_recommended,
+        'reviews': reviews,
+        'avg_rating': avg_rating,
+        'user_review': user_review,
+        'review_form': review_form,
     }
     
     return render(request, 'movies/movie_detail.html', context)
@@ -121,5 +162,19 @@ def add_to_recommended(request, movie_id):
     else:
         profile.recommended_movies.add(movie)
         messages.success(request, f"'{movie.title}' added to your recommended list!")
+    
+    return redirect('movie_detail', movie_id=movie_id)
+
+@login_required
+def delete_review(request, review_id):
+    review = get_object_or_404(Review, pk=review_id)
+    
+    # Check if the logged-in user is the owner of the review
+    if review.user != request.user:
+        return HttpResponseForbidden("You don't have permission to delete this review.")
+    
+    movie_id = review.movie.id
+    review.delete()
+    messages.success(request, "Your review has been deleted!")
     
     return redirect('movie_detail', movie_id=movie_id)
