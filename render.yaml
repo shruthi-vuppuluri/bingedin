@@ -24,8 +24,29 @@ services:
         value: false
       - key: OMDB_API_KEY
         value: 651b75a9  # Same as in load_movies.py
+      - key: PGUSER
+        fromDatabase:
+          name: bingedin-db
+          property: user
+      - key: PGPASSWORD
+        fromDatabase:
+          name: bingedin-db
+          property: password
+      - key: PGDATABASE
+        fromDatabase:
+          name: bingedin-db
+          property: database
+      - key: PGHOST
+        fromDatabase:
+          name: bingedin-db
+          property: host
+      - key: PGPORT
+        fromDatabase:
+          name: bingedin-db
+          property: port
 
 databases:
   - name: bingedin-db
     plan: free
-    region: oregon 
+    region: oregon
+    ipAllowList: []  # allow connections from all IPv4 addresses 
