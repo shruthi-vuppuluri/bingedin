@@ -17,6 +17,9 @@ from pathlib import Path
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
+# Detect if running on Render.com
+ON_RENDER = os.environ.get('RENDER') == 'true'
+
 # Load environment variables from .env file if present
 try:
     from dotenv import load_dotenv
@@ -98,29 +101,37 @@ WSGI_APPLICATION = 'bingedin.wsgi.application'
 # Database
 # https://docs.djangoproject.com/en/5.2/ref/settings/#databases
 
-# Default to SQLite for development
-DATABASES = {
-    'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+# On Render: Use in-memory SQLite (since filesystem is ephemeral)
+# In development: Use file-based SQLite
+if ON_RENDER:
+    print("Running on Render.com - using in-memory SQLite database")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': ':memory:',  # Use in-memory database on Render
+        }
     }
-}
+else:
+    print("Running in development - using file-based SQLite database")
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        }
+    }
 
-# Use DATABASE_URL environment variable if provided (Production)
-DATABASE_URL = os.environ.get('DATABASE_URL')
-if DATABASE_URL:
+# Only try to use PostgreSQL if we explicitly want to
+if os.environ.get('USE_POSTGRES') == 'true' and os.environ.get('DATABASE_URL'):
     try:
         import dj_database_url
-        db_config = dj_database_url.parse(DATABASE_URL, conn_max_age=600)
+        db_config = dj_database_url.parse(os.environ.get('DATABASE_URL'), conn_max_age=600)
         DATABASES['default'] = db_config
-        print(f"Using database: {db_config['ENGINE']} (from DATABASE_URL)")
+        print(f"Using PostgreSQL database (from DATABASE_URL)")
     except ImportError:
         print("dj_database_url not installed, using SQLite")
     except Exception as e:
-        print(f"Error configuring database: {str(e)}")
+        print(f"Error configuring PostgreSQL database: {str(e)}")
         print("Falling back to SQLite")
-else:
-    print("DATABASE_URL not set, using SQLite")
 
 # Print database configuration for debugging (without credentials)
 try:
