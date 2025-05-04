@@ -22,15 +22,20 @@ def check_table_exists(table_name):
     """Check if a specific table exists in the database."""
     cursor = connection.cursor()
     
-    # Query that works for both SQLite and PostgreSQL
-    cursor.execute("""
-        SELECT name FROM sqlite_master 
-        WHERE type='table' AND name=%s
-        UNION ALL
-        SELECT c.relname FROM pg_catalog.pg_class c
-        JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
-        WHERE c.relname = %s AND n.nspname = 'public'
-    """, [table_name, table_name])
+    # Detect database type
+    db_engine = connection.vendor
+    
+    if db_engine == 'sqlite':
+        cursor.execute("""
+            SELECT name FROM sqlite_master 
+            WHERE type='table' AND name=?
+        """, [table_name])
+    else:  # postgresql or other
+        cursor.execute("""
+            SELECT c.relname FROM pg_catalog.pg_class c
+            JOIN pg_catalog.pg_namespace n ON n.oid = c.relnamespace
+            WHERE c.relname = %s AND n.nspname = 'public'
+        """, [table_name])
     
     return cursor.fetchone() is not None
 
