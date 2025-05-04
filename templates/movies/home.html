@@ -1,4 +1,3 @@
-@ -1,335 +1,507 @@
 {% extends 'base.html' %}
 
 {% block title %}BingedIn - Home{% endblock %}
@@ -8,6 +7,9 @@
     :root {
         --primary: #4b514a;
         --secondary: #d1ebce;
+        --background: rgba(0, 0, 0, 0.92);
+        --text: #ffffff;
+        --heading: var(--secondary);
     }
     
     * {
@@ -15,15 +17,16 @@
         padding: 0;
         box-sizing: border-box;
         font-family: Arial, Helvetica, sans-serif;
+        transition: background-color 0.3s, color 0.3s;
     }
     
     body {
-        background-color: #000;
-        color: var(--secondary);
+        background-color: var(--background);
+        color: var(--text);
     }
     
     .header {
-        background-color: rgba(0, 0, 0, 0.8);
+        background-color: var(--background);
         padding: 20px 40px;
         display: flex;
         justify-content: space-between;
@@ -60,7 +63,7 @@
     }
     
     .navigation a {
-        color: #fff;
+        color: var(--text);
         margin-left: 20px;
         text-decoration: none;
         font-size: 14px;
@@ -68,10 +71,10 @@
     
     .hero {
         height: 80vh;
-        background-image: linear-gradient(rgba(0, 0, 0, 0.3), rgba(0, 0, 0, 0.8)), url('{{ featured_movie.image_url }}');
+        background-image: linear-gradient(rgba(0, 0, 0, 0.3), var(--background)), url('{{ featured_movie.image_url }}');
         background-size: cover;
         background-position: center;
-        color: #fff;
+        color: var(--text);
         display: flex;
         flex-direction: column;
         justify-content: flex-end;
@@ -81,12 +84,14 @@
     .hero h1 {
         font-size: 46px;
         margin-bottom: 10px;
+        color: var(--secondary);
     }
     
     .hero p {
         font-size: 18px;
         max-width: 600px;
         margin-bottom: 20px;
+        color: #ffffff;
     }
     
     .play-btn {
@@ -107,7 +112,7 @@
     .category-title {
         font-size: 22px;
         margin-bottom: 15px;
-        color: #fff;
+        color: var(--heading);
     }
     
     .movie-row-container {
@@ -165,6 +170,7 @@
         position: relative;
         transition: transform 0.3s ease;
         cursor: pointer;
+        background-color: #333; /* Fallback color if image doesn't load */
     }
     
     .movie-card:hover {
@@ -177,7 +183,6 @@
         left: 0;
         right: 0;
         background: rgba(209, 235, 206, 0.8);
-        color: var(--primary);
         padding: 8px;
         opacity: 0;
         transition: opacity 0.3s ease;
@@ -195,6 +200,11 @@
     .movie-title {
         font-weight: bold;
         margin-bottom: 5px;
+        color: var(--primary);
+    }
+    
+    .movie-desc {
+        color: #333;
     }
     
     .search-container {
