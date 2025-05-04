@@ -2,7 +2,7 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.db.models import Q, Avg
 from django.contrib import messages
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, JsonResponse
 from .models import Movie, Genre, Review
 from .forms import ReviewForm
 
@@ -143,11 +143,29 @@ def add_to_watched(request, movie_id):
     profile = request.user.profile
     
     # Check if movie is already in watched list
-    if profile.watched_movies.filter(id=movie_id).exists():
-        messages.info(request, f"'{movie.title}' is already in your watched list!")
+    already_exists = profile.watched_movies.filter(id=movie_id).exists()
+    if already_exists:
+        message = f"'{movie.title}' is already in your watched list!"
+        message_type = 'info'
     else:
         profile.watched_movies.add(movie)
-        messages.success(request, f"'{movie.title}' added to your watched list!")
+        message = f"'{movie.title}' added to your watched list!"
+        message_type = 'success'
+    
+    # Show message only for non-AJAX requests
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if message_type == 'info':
+            messages.info(request, message)
+        else:
+            messages.success(request, message)
+    
+    # Always return JSON for AJAX and redirect for regular requests
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'is_watched': True,
+            'message': message
+        })
     
     return redirect('movie_detail', movie_id=movie_id)
 
@@ -157,11 +175,29 @@ def add_to_recommended(request, movie_id):
     profile = request.user.profile
     
     # Check if movie is already in recommended list
-    if profile.recommended_movies.filter(id=movie_id).exists():
-        messages.info(request, f"'{movie.title}' is already in your recommended list!")
+    already_exists = profile.recommended_movies.filter(id=movie_id).exists()
+    if already_exists:
+        message = f"'{movie.title}' is already in your recommended list!"
+        message_type = 'info'
     else:
         profile.recommended_movies.add(movie)
-        messages.success(request, f"'{movie.title}' added to your recommended list!")
+        message = f"'{movie.title}' added to your recommended list!"
+        message_type = 'success'
+    
+    # Show message only for non-AJAX requests
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if message_type == 'info':
+            messages.info(request, message)
+        else:
+            messages.success(request, message)
+    
+    # Always return JSON for AJAX and redirect for regular requests
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'is_recommended': True,
+            'message': message
+        })
     
     return redirect('movie_detail', movie_id=movie_id)
 
@@ -176,5 +212,67 @@ def delete_review(request, review_id):
     movie_id = review.movie.id
     review.delete()
     messages.success(request, "Your review has been deleted!")
+    
+    return redirect('movie_detail', movie_id=movie_id)
+
+@login_required
+def remove_from_watched(request, movie_id):
+    movie = get_object_or_404(Movie, pk=movie_id)
+    profile = request.user.profile
+    
+    # Check if movie is in the watched list
+    if profile.watched_movies.filter(id=movie_id).exists():
+        profile.watched_movies.remove(movie)
+        message = f"'{movie.title}' removed from your watched list."
+        message_type = 'success'
+    else:
+        message = f"'{movie.title}' is not in your watched list."
+        message_type = 'info'
+    
+    # Show message only for non-AJAX requests
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if message_type == 'info':
+            messages.info(request, message)
+        else:
+            messages.success(request, message)
+    
+    # Always return JSON for AJAX and redirect for regular requests
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'is_watched': False,
+            'message': message
+        })
+    
+    return redirect('movie_detail', movie_id=movie_id)
+
+@login_required
+def remove_from_recommended(request, movie_id):
+    movie = get_object_or_404(Movie, pk=movie_id)
+    profile = request.user.profile
+    
+    # Check if movie is in the recommended list
+    if profile.recommended_movies.filter(id=movie_id).exists():
+        profile.recommended_movies.remove(movie)
+        message = f"'{movie.title}' removed from your recommended list."
+        message_type = 'success'
+    else:
+        message = f"'{movie.title}' is not in your recommended list."
+        message_type = 'info'
+    
+    # Show message only for non-AJAX requests
+    if not request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        if message_type == 'info':
+            messages.info(request, message)
+        else:
+            messages.success(request, message)
+    
+    # Always return JSON for AJAX and redirect for regular requests
+    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+        return JsonResponse({
+            'status': 'success',
+            'is_recommended': False,
+            'message': message
+        })
     
     return redirect('movie_detail', movie_id=movie_id)

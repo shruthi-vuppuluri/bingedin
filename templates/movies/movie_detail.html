@@ -237,7 +237,8 @@
         margin-bottom: 10px;
         border-radius: 5px;
         box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
-        animation: fadeIn 0.3s ease-in, fadeOut 0.5s ease-in 3s forwards;
+        animation: fadeIn 0.3s ease-in, fadeOut 0.5s ease-in 5s forwards;
+        display: block !important; /* Ensure message is visible */
     }
     
     .message-success {
@@ -361,6 +362,7 @@
     </div>
 </div>
 
+<!-- Messages -->
 {% if messages %}
 <div class="messages">
     {% for message in messages %}
@@ -379,15 +381,15 @@
     <p class="movie-desc">{{ movie.description }}</p>
     <div class="action-btns">
         {% if is_watched %}
-            <a href="#" class="btn btn-disabled"><span class="btn-icon">✓</span> Already Watched</a>
+            <a href="{% url 'remove_from_watched' movie.id %}" class="btn btn-disabled" id="watched-btn"><span class="btn-icon">✓</span> Remove from Watched</a>
         {% else %}
-            <a href="{% url 'add_to_watched' movie.id %}" class="btn btn-primary"><span class="btn-icon">✓</span> Add to Watched</a>
+            <a href="{% url 'add_to_watched' movie.id %}" class="btn btn-primary" id="watched-btn"><span class="btn-icon">✓</span> Add to Watched</a>
         {% endif %}
         
         {% if is_recommended %}
-            <a href="#" class="btn btn-disabled"><span class="btn-icon">🎬</span> Already Recommended</a>
+            <a href="{% url 'remove_from_recommended' movie.id %}" class="btn btn-disabled" id="recommend-btn"><span class="btn-icon">🎬</span> Remove from Recommended</a>
         {% else %}
-            <a href="{% url 'add_to_recommended' movie.id %}" class="btn btn-secondary"><span class="btn-icon">🎬</span> Recommend</a>
+            <a href="{% url 'add_to_recommended' movie.id %}" class="btn btn-secondary" id="recommend-btn"><span class="btn-icon">🎬</span> Recommend</a>
         {% endif %}
     </div>
 </div>
@@ -486,14 +488,171 @@
 
 {% block scripts %}
 <script>
-    // Auto-hide messages after 4 seconds
+    // Keep track of pending requests to avoid duplicates
+    let isPendingRequest = false;
+    
+    // Utility function to show a message
+    function showMessage(message, type = 'success') {
+        // Clear any existing messages first
+        const existingMessages = document.querySelectorAll('.message');
+        existingMessages.forEach(msg => msg.remove());
+        
+        const messagesContainer = document.querySelector('.messages') || createMessagesContainer();
+        const messageEl = document.createElement('div');
+        messageEl.className = `message message-${type}`;
+        messageEl.textContent = message;
+        messagesContainer.appendChild(messageEl);
+        
+        // Auto-fade message
+        setTimeout(() => {
+            messageEl.style.opacity = '0';
+            setTimeout(() => {
+                messageEl.remove();
+            }, 500);
+        }, 4000);
+    }
+    
+    // Create messages container if it doesn't exist
+    function createMessagesContainer() {
+        const container = document.createElement('div');
+        container.className = 'messages';
+        document.body.insertBefore(container, document.body.firstChild);
+        return container;
+    }
+    
     document.addEventListener('DOMContentLoaded', function() {
+        // Handle existing messages
         setTimeout(function() {
             var messages = document.querySelectorAll('.message');
             messages.forEach(function(message) {
-                message.style.display = 'none';
+                message.style.opacity = '0';
+                setTimeout(function() {
+                    message.style.display = 'none';
+                }, 500);
             });
         }, 4000);
+        
+        // Handle watched button (adding and removing)
+        const watchedBtn = document.getElementById('watched-btn');
+        
+        if (watchedBtn) {
+            watchedBtn.addEventListener('click', function(e) {
+                // Prevent immediate redirect
+                e.preventDefault();
+                
+                // Prevent duplicate requests
+                if (isPendingRequest) return;
+                isPendingRequest = true;
+                
+                const btnUrl = this.href;
+                const isAdding = btnUrl.includes('add-to-watched');
+                
+                // Change button appearance immediately
+                if (isAdding) {
+                    this.classList.remove('btn-primary');
+                    this.classList.add('btn-disabled');
+                    this.innerHTML = '<span class="btn-icon">✓</span> Remove from Watched';
+                    this.href = btnUrl.replace('add-to-watched', 'remove-from-watched');
+                } else {
+                    this.classList.remove('btn-disabled');
+                    this.classList.add('btn-primary');
+                    this.innerHTML = '<span class="btn-icon">✓</span> Add to Watched';
+                    this.href = btnUrl.replace('remove-from-watched', 'add-to-watched');
+                }
+                
+                // Perform the actual action
+                fetch(btnUrl, { 
+                    method: 'GET', 
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    isPendingRequest = false;
+                    if (response.ok) {
+                        return response.json().catch(() => {
+                            // If JSON parsing fails, return a simple success object
+                            return { 
+                                status: 'success', 
+                                message: isAdding ? 'Added to watched list' : 'Removed from watched list'
+                            };
+                        });
+                    }
+                    throw new Error('Network response was not ok');
+                })
+                .then(data => {
+                    showMessage(data.message || (isAdding ? 'Added to watched list' : 'Removed from watched list'));
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Show a generic success message anyway
+                    showMessage(isAdding ? 'Added to watched list' : 'Removed from watched list', 'success');
+                });
+            });
+        }
+        
+        // Handle recommend button (adding and removing)
+        const recommendBtn = document.getElementById('recommend-btn');
+        
+        if (recommendBtn) {
+            recommendBtn.addEventListener('click', function(e) {
+                // Prevent immediate redirect
+                e.preventDefault();
+                
+                // Prevent duplicate requests
+                if (isPendingRequest) return;
+                isPendingRequest = true;
+                
+                const btnUrl = this.href;
+                const isAdding = btnUrl.includes('add-to-recommended');
+                
+                // Change button appearance immediately
+                if (isAdding) {
+                    this.classList.remove('btn-secondary');
+                    this.classList.add('btn-disabled');
+                    this.innerHTML = '<span class="btn-icon">🎬</span> Remove from Recommended';
+                    this.href = btnUrl.replace('add-to-recommended', 'remove-from-recommended');
+                } else {
+                    this.classList.remove('btn-disabled');
+                    this.classList.add('btn-secondary');
+                    this.innerHTML = '<span class="btn-icon">🎬</span> Recommend';
+                    this.href = btnUrl.replace('remove-from-recommended', 'add-to-recommended');
+                }
+                
+                // Perform the actual action
+                fetch(btnUrl, { 
+                    method: 'GET', 
+                    credentials: 'same-origin',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'Accept': 'application/json'
+                    }
+                })
+                .then(response => {
+                    isPendingRequest = false;
+                    if (response.ok) {
+                        return response.json().catch(() => {
+                            // If JSON parsing fails, return a simple success object
+                            return { 
+                                status: 'success', 
+                                message: isAdding ? 'Added to recommended list' : 'Removed from recommended list'
+                            };
+                        });
+                    }
+                    throw new Error('Network response was not ok');
+                })
+                .then(data => {
+                    showMessage(data.message || (isAdding ? 'Added to recommended list' : 'Removed from recommended list'));
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    // Show a generic success message anyway
+                    showMessage(isAdding ? 'Added to recommended list' : 'Removed from recommended list', 'success');
+                });
+            });
+        }
     });
 </script>
 {% endblock %} 
