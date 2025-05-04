@@ -28,7 +28,7 @@ def check_table_exists(table_name):
     if db_engine == 'sqlite':
         cursor.execute("""
             SELECT name FROM sqlite_master 
-            WHERE type='table' AND name=?
+            WHERE type='table' AND name=%s
         """, [table_name])
     else:  # postgresql or other
         cursor.execute("""

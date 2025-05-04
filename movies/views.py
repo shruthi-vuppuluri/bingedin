@@ -29,8 +29,11 @@ def home(request):
     if not recommended_movies:
         recommended_movies = recent_movies
     
+    # Get featured movie, ensuring it has a valid ID
+    featured_movie = recent_movies.first()
+    
     context = {
-        'featured_movie': recent_movies.first(),  # Featured movie for the hero section
+        'featured_movie': featured_movie,
         'genres': genres,
         'recommended_movies': recommended_movies[:10],
         'recent_movies': recent_movies,
