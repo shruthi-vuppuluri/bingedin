@@ -276,3 +276,58 @@ def remove_from_recommended(request, movie_id):
         })
     
     return redirect('movie_detail', movie_id=movie_id)
+
+@login_required
+def account_settings(request):
+    user = request.user
+    profile = user.profile
+    
+    # If POST request, update favorite genres
+    if request.method == 'POST':
+        # Update favorite genres
+        favorite_genres = request.POST.get('favorite_genres', '')
+        profile.favorite_genres = favorite_genres
+        profile.save()
+        
+        # Update username if provided
+        new_username = request.POST.get('username', '').strip()
+        if new_username and new_username != user.username:
+            from django.contrib.auth.models import User
+            if not User.objects.filter(username=new_username).exists():
+                user.username = new_username
+                user.save()
+                messages.success(request, "Username updated successfully.")
+            else:
+                messages.error(request, "Username already taken.")
+        
+        # Update email if provided
+        new_email = request.POST.get('email', '').strip()
+        if new_email and new_email != user.email:
+            user.email = new_email
+            user.save()
+            messages.success(request, "Email updated successfully.")
+        
+        # Update password if provided
+        new_password = request.POST.get('new_password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+        if new_password:
+            if new_password == confirm_password:
+                user.set_password(new_password)
+                user.save()
+                messages.success(request, "Password updated successfully. Please log in again.")
+                return redirect('login')
+            else:
+                messages.error(request, "Passwords do not match.")
+    
+    # Get all available genres
+    all_genres = Genre.objects.all()
+    user_genres = profile.favorite_genres.split(',') if profile.favorite_genres else []
+    
+    context = {
+        'user': user,
+        'profile': profile,
+        'all_genres': all_genres,
+        'user_genres': user_genres,
+    }
+    
+    return render(request, 'movies/account_settings.html', context)

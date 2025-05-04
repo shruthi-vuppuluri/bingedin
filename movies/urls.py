@@ -5,6 +5,7 @@ urlpatterns = [
     path('', views.home, name='home'),
     path('search/', views.search, name='search'),
     path('profile/', views.profile, name='profile'),
+    path('settings/', views.account_settings, name='account_settings'),
     path('movie/<int:movie_id>/', views.movie_detail, name='movie_detail'),
     path('movie/<int:movie_id>/add-to-watched/', views.add_to_watched, name='add_to_watched'),
     path('movie/<int:movie_id>/add-to-recommended/', views.add_to_recommended, name='add_to_recommended'),

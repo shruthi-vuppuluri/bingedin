@@ -1,0 +1,341 @@
+{% extends 'base.html' %}
+
+{% block title %}Account Settings - BingedIn{% endblock %}
+
+{% block styles %}
+<style>
+    :root {
+        --primary: #4b514a;
+        --secondary: #d1ebce;
+        --background: rgba(0, 0, 0, 0.92);
+        --text: #ffffff;
+        --heading: var(--secondary);
+    }
+    
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        font-family: Arial, Helvetica, sans-serif;
+    }
+    
+    body {
+        background-color: var(--background);
+        color: var(--text);
+    }
+    
+    .header {
+        background-color: rgba(0, 0, 0, 0.8);
+        padding: 20px 40px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        z-index: 100;
+    }
+    
+    .logo {
+        color: var(--secondary);
+        font-size: 28px;
+        font-weight: bold;
+        text-decoration: none;
+    }
+    
+    .navigation {
+        display: flex;
+        align-items: center;
+    }
+    
+    .profile-icon {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        background-color: var(--secondary);
+        margin-left: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+        font-weight: bold;
+        cursor: pointer;
+    }
+    
+    .navigation a {
+        color: var(--text);
+        margin-left: 20px;
+        text-decoration: none;
+        font-size: 14px;
+    }
+    
+    .settings-container {
+        max-width: 900px;
+        margin: 120px auto 50px;
+        padding: 30px;
+    }
+    
+    .settings-header {
+        margin-bottom: 40px;
+    }
+    
+    .settings-header h1 {
+        font-size: 32px;
+        color: var(--heading);
+        margin-bottom: 10px;
+    }
+    
+    .settings-header p {
+        color: #aaa;
+        font-size: 16px;
+    }
+    
+    .settings-section {
+        background-color: #111;
+        border-radius: 8px;
+        padding: 30px;
+        margin-bottom: 30px;
+    }
+    
+    .settings-section h2 {
+        font-size: 22px;
+        color: var(--heading);
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #333;
+    }
+    
+    .form-group {
+        margin-bottom: 20px;
+    }
+    
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        color: #ccc;
+    }
+    
+    .form-control {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #333;
+        background-color: #222;
+        color: #fff;
+        border-radius: 4px;
+        font-size: 16px;
+    }
+    
+    .form-control:focus {
+        outline: none;
+        border-color: var(--secondary);
+    }
+    
+    .checkbox-group {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .checkbox-item {
+        background-color: #222;
+        padding: 8px 15px;
+        border-radius: 20px;
+        display: inline-block;
+        cursor: pointer;
+        user-select: none;
+    }
+    
+    .checkbox-item input {
+        display: none;
+    }
+    
+    .checkbox-item.checked {
+        background-color: var(--secondary);
+        color: var(--primary);
+    }
+    
+    .btn {
+        padding: 12px 30px;
+        border-radius: 4px;
+        font-weight: bold;
+        cursor: pointer;
+        text-decoration: none;
+        margin-right: 15px;
+        font-size: 16px;
+        display: inline-block;
+        border: none;
+    }
+    
+    .btn-primary {
+        background-color: var(--secondary);
+        color: var(--primary);
+    }
+    
+    .btn-danger {
+        background-color: #e74c3c;
+        color: white;
+    }
+    
+    .messages {
+        position: fixed;
+        top: 80px;
+        right: 20px;
+        z-index: 1000;
+        width: 300px;
+    }
+    
+    .message {
+        padding: 15px;
+        margin-bottom: 10px;
+        border-radius: 5px;
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+        animation: fadeIn 0.3s ease-in, fadeOut 0.5s ease-in 5s forwards;
+    }
+    
+    .message-success {
+        background-color: #4CAF50;
+        color: white;
+    }
+    
+    .message-info {
+        background-color: #2196F3;
+        color: white;
+    }
+    
+    .message-warning {
+        background-color: #ff9800;
+        color: white;
+    }
+    
+    .message-error {
+        background-color: #f44336;
+        color: white;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(-20px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes fadeOut {
+        from { opacity: 1; transform: translateY(0); }
+        to { opacity: 0; transform: translateY(-20px); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="header">
+    <a href="{% url 'home' %}" class="logo">BingedIn</a>
+    <div class="navigation">
+        <a href="{% url 'home' %}">Home</a>
+        <a href="{% url 'search' %}">Search</a>
+        <a href="{% url 'profile' %}">Profile</a>
+        <a href="{% url 'logout' %}">Logout</a>
+        <a href="{% url 'account_settings' %}">
+            <div class="profile-icon">{{ request.user.username.0|upper }}</div>
+        </a>
+    </div>
+</div>
+
+{% if messages %}
+<div class="messages">
+    {% for message in messages %}
+        <div class="message message-{{ message.tags }}">
+            {{ message }}
+        </div>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="settings-container">
+    <div class="settings-header">
+        <h1>Account Settings</h1>
+        <p>Manage your profile and account preferences</p>
+    </div>
+
+    <form method="post" action="{% url 'account_settings' %}">
+        {% csrf_token %}
+        
+        <div class="settings-section">
+            <h2>Profile Information</h2>
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" id="username" name="username" class="form-control" value="{{ user.username }}">
+            </div>
+            <div class="form-group">
+                <label for="email">Email Address</label>
+                <input type="email" id="email" name="email" class="form-control" value="{{ user.email }}">
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <h2>Movie Preferences</h2>
+            <div class="form-group">
+                <label>Favorite Genres</label>
+                <p>These will be used to personalize your movie recommendations</p>
+                <input type="hidden" id="favorite_genres" name="favorite_genres" value="{{ profile.favorite_genres }}">
+                <div class="checkbox-group">
+                    {% for genre in all_genres %}
+                    <div class="checkbox-item {% if genre.name in user_genres %}checked{% endif %}" data-genre="{{ genre.name }}">
+                        <input type="checkbox" id="genre_{{ genre.id }}" {% if genre.name in user_genres %}checked{% endif %}>
+                        <label for="genre_{{ genre.id }}">{{ genre.name }}</label>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="settings-section">
+            <h2>Change Password</h2>
+            <div class="form-group">
+                <label for="new_password">New Password</label>
+                <input type="password" id="new_password" name="new_password" class="form-control">
+            </div>
+            <div class="form-group">
+                <label for="confirm_password">Confirm New Password</label>
+                <input type="password" id="confirm_password" name="confirm_password" class="form-control">
+            </div>
+        </div>
+        
+        <button type="submit" class="btn btn-primary">Save Changes</button>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Handle messages animation
+        setTimeout(function() {
+            var messages = document.querySelectorAll('.message');
+            messages.forEach(function(message) {
+                message.style.opacity = '0';
+                setTimeout(function() {
+                    message.style.display = 'none';
+                }, 500);
+            });
+        }, 4000);
+        
+        // Handle genre selection
+        const genreItems = document.querySelectorAll('.checkbox-item');
+        const favoriteGenresInput = document.getElementById('favorite_genres');
+        
+        genreItems.forEach(item => {
+            item.addEventListener('click', function() {
+                this.classList.toggle('checked');
+                
+                // Update hidden input with selected genres
+                const selectedGenres = [];
+                document.querySelectorAll('.checkbox-item.checked').forEach(checkedItem => {
+                    selectedGenres.push(checkedItem.dataset.genre);
+                });
+                
+                favoriteGenresInput.value = selectedGenres.join(',');
+            });
+        });
+    });
+</script>
+{% endblock %} 
