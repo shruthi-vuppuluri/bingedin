@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
-from django.db.models import Q, Avg
+from django.db.models import Q, Avg, Count
 from django.contrib import messages
 from django.http import HttpResponseForbidden, JsonResponse
 from .models import Movie, Genre, Review
@@ -16,21 +16,74 @@ def home(request):
     # Get recent movies (simulating "trending" for demonstration)
     recent_movies = Movie.objects.all().order_by('-id')[:10]
     
-    # Basic recommendation: show movies based on the user's favorite genres
-    # In a real application, you would use a more sophisticated recommendation algorithm
+    # Enhanced recommendation system that considers genres, actors, and directors
     recommended_movies = []
-    if hasattr(request.user, 'profile') and request.user.profile.favorite_genres:
-        favorite_genres = request.user.profile.favorite_genres.split(',')
-        for genre_name in favorite_genres:
-            genre_movies = Movie.objects.filter(genres__name__icontains=genre_name)
-            recommended_movies.extend(genre_movies)
     
-    # If no recommendations based on favorites, show some popular ones
+    if hasattr(request.user, 'profile'):
+        # Get user's watched and recommended movies to analyze preferences
+        watched_movies = request.user.profile.watched_movies.all()
+        user_recommended_movies = request.user.profile.recommended_movies.all()
+        user_movies = list(watched_movies) + list(user_recommended_movies)
+        
+        # Extract favorite genres, actors, and directors from user's watched/recommended movies
+        favorite_genres = []
+        favorite_actors = []
+        favorite_directors = []
+        
+        # Add explicitly set favorite genres from profile
+        if request.user.profile.favorite_genres:
+            favorite_genres.extend(request.user.profile.favorite_genres.split(','))
+        
+        # Extract preferences from user's movies
+        for movie in user_movies:
+            # Add movie genres
+            for genre in movie.genres.all():
+                if genre.name not in favorite_genres:
+                    favorite_genres.append(genre.name)
+            
+            # Add movie actors (split by commas since actors field is a comma-separated string)
+            if movie.actors:
+                movie_actors = [actor.strip() for actor in movie.actors.split(',')]
+                for actor in movie_actors:
+                    if actor and actor not in favorite_actors:
+                        favorite_actors.append(actor)
+            
+            # Add movie director
+            if movie.director and movie.director not in favorite_directors:
+                favorite_directors.append(movie.director)
+        
+        # Build recommendations based on genres, actors, and directors
+        if favorite_genres or favorite_actors or favorite_directors:
+            # First, find movies by favorite genres
+            for genre_name in favorite_genres:
+                genre_movies = Movie.objects.filter(genres__name__icontains=genre_name)
+                for movie in genre_movies:
+                    if movie not in recommended_movies and movie not in user_movies:
+                        recommended_movies.append(movie)
+            
+            # Then, find movies by favorite actors
+            for actor in favorite_actors:
+                actor_movies = Movie.objects.filter(actors__icontains=actor)
+                for movie in actor_movies:
+                    if movie not in recommended_movies and movie not in user_movies:
+                        recommended_movies.append(movie)
+            
+            # Finally, find movies by favorite directors
+            for director in favorite_directors:
+                director_movies = Movie.objects.filter(director__icontains=director)
+                for movie in director_movies:
+                    if movie not in recommended_movies and movie not in user_movies:
+                        recommended_movies.append(movie)
+    
+    # If no recommendations based on preferences, show some popular ones
     if not recommended_movies:
         recommended_movies = recent_movies
     
+    # Get featured movie, ensuring it has a valid ID
+    featured_movie = recent_movies.first()
+    
     context = {
-        'featured_movie': recent_movies.first(),  # Featured movie for the hero section
+        'featured_movie': featured_movie,
         'genres': genres,
         'recommended_movies': recommended_movies[:10],
         'recent_movies': recent_movies,
@@ -80,8 +133,68 @@ def profile(request):
 def movie_detail(request, movie_id):
     movie = get_object_or_404(Movie, pk=movie_id)
     
-    # Get similar movies (based on genres)
-    similar_movies = Movie.objects.filter(genres__in=movie.genres.all()).exclude(id=movie.id).distinct()[:6]
+    # Enhanced recommendation system using Q objects
+    
+    # Create base queryset excluding current movie
+    recommendations_query = Movie.objects.exclude(id=movie.id)
+    
+    # Build query conditions
+    director_condition = Q(director__icontains=movie.director) if movie.director else Q()
+    
+    # Get actors from current movie
+    actor_conditions = Q()
+    if movie.actors:
+        actors = [actor.strip() for actor in movie.actors.split(',')]
+        for actor in actors:
+            if actor:
+                actor_conditions |= Q(actors__icontains=actor)
+    
+    # Find movies with matching genres
+    genre_ids = movie.genres.values_list('id', flat=True)
+    genre_matches = recommendations_query.filter(
+        genres__id__in=genre_ids
+    ).annotate(
+        matching_genres=Count('genres', filter=Q(genres__id__in=genre_ids))
+    ).filter(
+        matching_genres__gte=1
+    )
+    
+    # Combine recommendations, prioritizing movies that match multiple criteria
+    similar_movies = []
+    
+    # First priority: movies matching director AND actor AND 2+ genres
+    director_actor_genre_matches = genre_matches.filter(
+        director_condition,
+        actor_conditions,
+        matching_genres__gte=2
+    ).distinct()
+    similar_movies.extend(list(director_actor_genre_matches)[:3])
+    
+    # Second priority: movies matching director OR actor AND 2+ genres
+    if len(similar_movies) < 6:
+        director_or_actor_genre_matches = genre_matches.filter(
+            director_condition | actor_conditions,
+            matching_genres__gte=2
+        ).exclude(
+            id__in=[m.id for m in similar_movies]
+        ).distinct()
+        similar_movies.extend(list(director_or_actor_genre_matches)[:6-len(similar_movies)])
+    
+    # Third priority: movies matching director OR actor
+    if len(similar_movies) < 6:
+        director_or_actor_matches = recommendations_query.filter(
+            director_condition | actor_conditions
+        ).exclude(
+            id__in=[m.id for m in similar_movies]
+        ).distinct()
+        similar_movies.extend(list(director_or_actor_matches)[:6-len(similar_movies)])
+    
+    # Final priority: genre matches with at least one matching genre
+    if len(similar_movies) < 6:
+        remaining_genre_matches = genre_matches.exclude(
+            id__in=[m.id for m in similar_movies]
+        ).order_by('-matching_genres')
+        similar_movies.extend(list(remaining_genre_matches)[:6-len(similar_movies)])
     
     # Check if movie is in user's watched list
     is_watched = request.user.profile.watched_movies.filter(id=movie_id).exists()

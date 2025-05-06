@@ -254,10 +254,16 @@
 </div>
 
 <div class="hero">
-    <h1>{{ featured_movie.title }}</h1>
-    <p>#1 in Movies Today</p>
-    <p>{{ featured_movie.description }}</p>
-    <a href="{% url 'movie_detail' featured_movie.id %}" class="play-btn">▶ Play</a>
+    {% if featured_movie %}
+        <h1>{{ featured_movie.title }}</h1>
+        <p>#1 in Movies Today</p>
+        <p>{{ featured_movie.description }}</p>
+        <a href="{% url 'movie_detail' featured_movie.id %}" class="play-btn">▶ Play</a>
+    {% else %}
+        <h1>Welcome to BingedIn</h1>
+        <p>Your personal movie tracking platform</p>
+        <p>Start by exploring our movie collection or search for your favorites.</p>
+    {% endif %}
 </div>
 
 <div class="search-container">
@@ -272,16 +278,22 @@
     <div class="movie-row-container">
         <button class="scroll-arrow scroll-left">&lt;</button>
         <div class="movie-row">
-            {% for movie in recommended_movies %}
-            <a href="{% url 'movie_detail' movie.id %}">
-                <div class="movie-card" style="background-image: url('{{ movie.image_url }}')">
-                    <div class="movie-info">
-                        <div class="movie-title">{{ movie.title }} ({{ movie.release_year }})</div>
-                        <div class="movie-desc">{{ movie.description|truncatechars:60 }}</div>
+            {% if recommended_movies %}
+                {% for movie in recommended_movies %}
+                <a href="{% url 'movie_detail' movie.id %}">
+                    <div class="movie-card" style="background-image: url('{{ movie.image_url }}')">
+                        <div class="movie-info">
+                            <div class="movie-title">{{ movie.title }} ({{ movie.release_year }})</div>
+                            <div class="movie-desc">{{ movie.description|truncatechars:60 }}</div>
+                        </div>
                     </div>
+                </a>
+                {% endfor %}
+            {% else %}
+                <div class="movie-card" style="display: flex; justify-content: center; align-items: center; color: white;">
+                    No recommendations yet.
                 </div>
-            </a>
-            {% endfor %}
+            {% endif %}
         </div>
         <button class="scroll-arrow scroll-right">&gt;</button>
     </div>
@@ -295,6 +307,7 @@
         <button class="scroll-arrow scroll-left">&lt;</button>
         <div class="movie-row">
             {% for movie in genre.movies.all %}
+            {% if movie.id %}
             <a href="{% url 'movie_detail' movie.id %}">
                 <div class="movie-card" style="background-image: url('{{ movie.image_url }}')">
                     <div class="movie-info">
@@ -303,6 +316,7 @@
                     </div>
                 </div>
             </a>
+            {% endif %}
             {% endfor %}
         </div>
         <button class="scroll-arrow scroll-right">&gt;</button>
